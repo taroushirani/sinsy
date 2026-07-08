@@ -58,7 +58,8 @@ namespace
 {
 const std::string SIL_STR = "sil";
 const std::string SEPARATOR = ",";
-const std::string LANGUAGE_INFO = "JPN";
+const std::string LANGUAGE_INFO_KEY = "LANGUAGE_INFO";
+const std::string DEFAULT_LANGUAGE_INFO = "JPN";
 const std::string MACRON = "MACRON";
 const std::string VOWEL_REDUCTION = "VOWEL_REDUCTION";
 const std::string PHONEME_CL = "PHONEME_CL";
@@ -129,8 +130,8 @@ class InfoAdder
 {
 public:
    //! constructor
-   InfoAdder(sinsy::IConvertable& c, const std::string& cl, const PhonemeJudge& pj) :
-      convertable(c), clPhoneme(cl), phonemeJudge(pj), waiting(false), vowelReductionIdx(INVALID_IDX), scoreFlag(0), macronFlag(false) {
+   InfoAdder(sinsy::IConvertable& c, const std::string& cl, const PhonemeJudge& pj, const std::string& li) :
+      convertable(c), clPhoneme(cl), phonemeJudge(pj), languageInfo(li), waiting(false), vowelReductionIdx(INVALID_IDX), scoreFlag(0), macronFlag(false) {
    }
 
    //! destructor
@@ -269,7 +270,7 @@ private:
                const std::string& type(phonemeJudge.getType(*i));
                phonemeInfos.push_back(PhonemeInfo(type, *i, scoreFlag));
             }
-            convertable.addInfo(phonemeInfos, LANGUAGE_INFO, info);
+            convertable.addInfo(phonemeInfos, languageInfo, info);
             if (PhonemeInfo::TYPE_VOWEL == phonemeJudge.getType(phonemes.back())) {
                lastPhoneme = phonemes.back();
             } else {
@@ -291,6 +292,9 @@ private:
 
    //! phoneme type judge
    const PhonemeJudge& phonemeJudge;
+
+   //! language info (e.g. "JPN", "ENG")
+   const std::string languageInfo;
 
    //! waiting flag
    bool waiting;
@@ -488,6 +492,7 @@ bool JConf::convert(const std::string& enc, ConvertableList::iterator begin, Con
    const std::string macronSymbol(config.get(MACRON));
    const std::string clSymbol(config.get(PHONEME_CL));
    const std::string vowelReductionSymbol(config.get(VOWEL_REDUCTION));
+   const std::string languageInfo(config.get<std::string>(LANGUAGE_INFO_KEY, DEFAULT_LANGUAGE_INFO));
    std::string vowels(config.get(VOWELS));
 
    if (vowels.empty()) {
@@ -501,7 +506,7 @@ bool JConf::convert(const std::string& enc, ConvertableList::iterator begin, Con
    for (ConvertableList::iterator itr(begin); itr != end; ++itr) {
       IConvertable& convertable(**itr);
 
-      InfoAdder* infoAdder = new InfoAdder(**itr, clSymbol, phonemeJudge);
+      InfoAdder* infoAdder = new InfoAdder(**itr, clSymbol, phonemeJudge, languageInfo);
 
       std::string lyric(convertable.getLyric());
 
@@ -515,7 +520,7 @@ bool JConf::convert(const std::string& enc, ConvertableList::iterator begin, Con
          if (!vowelReductionSymbol.empty() && (0 == lyric.compare(0, vowelReductionSymbol.size(), vowelReductionSymbol))) { // vowel reduction
             WARN_MSG("Vowel reduction symbol appeared at the invalid place");
             lyric.erase(0, vowelReductionSymbol.size());
-         } else if (0 == lyric.compare(0, macronSymbol.size(), macronSymbol)) { // macron
+         } else if (!macronSymbol.empty() && (0 == lyric.compare(0, macronSymbol.size(), macronSymbol))) { // macron
             if (NULL != infoAdder->getLastPhonemes()) {
                infoAdder->cancelVowelReductionOfLastSyllable();
             } else if (infoAdderList.empty()) {

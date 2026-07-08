@@ -63,7 +63,7 @@ const std::string CODE_SEPARATOR = "|";
 /*!
  constructor
  */
-ConfManager::ConfManager() : uJConf(NULL), sJConf(NULL), eJConf(NULL), jConfs(NULL)
+ConfManager::ConfManager() : uJConf(NULL), sJConf(NULL), eJConf(NULL), enUtf8Conf(NULL), jConfs(NULL)
 {
 }
 
@@ -87,6 +87,7 @@ void ConfManager::clear()
    uJConf = NULL;
    sJConf = NULL;
    eJConf = NULL;
+   enUtf8Conf = NULL;
    jConfs = NULL;
    confList.clear();
 }
@@ -161,6 +162,24 @@ bool ConfManager::setLanguages(const std::string& languages, const std::string& 
          }
          addJConf(eJConf);
          deleteList.push_back(eJConf);
+
+         break;
+      }
+      case 'e' : { // English
+         const std::string TABLE_UTF_8(dirPath + "/english.utf_8.table");
+         const std::string CONF_UTF_8(dirPath + "/english.utf_8.conf");
+         const std::string MACRON_TABLE(dirPath + "/english.macron");
+
+         enUtf8Conf = new JConf(UTF_8_STRS);
+
+         if (!enUtf8Conf->read(TABLE_UTF_8, CONF_UTF_8, MACRON_TABLE)) {
+            ERR_MSG("Cannot read English table or config or macron file : " << TABLE_UTF_8 << ", " << CONF_UTF_8);
+            delete enUtf8Conf;
+            enUtf8Conf = NULL;
+            return false;
+         }
+         addJConf(enUtf8Conf);
+         deleteList.push_back(enUtf8Conf);
 
          break;
       }

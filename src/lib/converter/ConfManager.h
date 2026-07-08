@@ -88,6 +88,9 @@ private:
    //! Japanese conf (EUC-JP)
    JConf* eJConf;
 
+   //! English conf (UTF-8)
+   JConf* enUtf8Conf;
+
    //! japanese confs
    ConfGroup* jConfs;
 
